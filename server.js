@@ -8,6 +8,7 @@ import dbConnect from './config/db.js'
 
 import { routeNotFound, errorHandler } from './middlewares/error-middleware.js'
 
+import userRoutes from './routes/user-routes.js'
 import teamRoutes from './routes/team-routes.js'
 import playerRoutes from './routes/player-routes.js'
 
@@ -24,6 +25,7 @@ app.use(cors())
 //Parsing the request body to json
 app.use(express.json())
 
+app.use('/users', userRoutes)
 app.use('/teams', teamRoutes)
 app.use('/players', playerRoutes)
 
