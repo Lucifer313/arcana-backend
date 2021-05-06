@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 import asyncHandler from 'express-async-handler'
 import Team from '../models/team-model.js'
-import e from 'express'
+import Player from '../models/player-model.js'
 
 //Create a New Team //
 export const createTeam = asyncHandler(async (req, res) => {
@@ -161,6 +161,24 @@ export const updateTeamById = asyncHandler(async (req, res) => {
       tis_won: team.tis_won,
       creation_date: team.creation_date,
     })
+  } catch (error) {
+    throw new Error(error)
+  }
+})
+
+export const getTeamPlayers = asyncHandler(async (req, res) => {
+  const team_id = req.params.tid
+
+  try {
+    const players = await Player.find({ team: team_id })
+
+    if (!players) {
+      res.status(404)
+      throw new Error('No players found for the given team')
+    }
+
+    res.status(200)
+    res.json({ players })
   } catch (error) {
     throw new Error(error)
   }

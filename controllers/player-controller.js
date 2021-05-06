@@ -112,3 +112,56 @@ export const deletePlayerById = asyncHandler(async (req, res) => {
     throw new Error(error)
   }
 })
+
+export const updatePlayerById = asyncHandler(async (req, res, next) => {
+  const player_id = req.params.pid
+
+  try {
+    const player = await Player.findById(player_id)
+
+    if (!player) {
+      res.status(404)
+      throw new Error('Player not found')
+    }
+
+    const {
+      name,
+      alias,
+      profile_image,
+      date_of_birth,
+      region,
+      country,
+      team,
+      tis_won,
+      prize_money,
+    } = req.body
+
+    player.name = name
+    player.alias = alias
+    player.profile_image = profile_image
+    player.date_of_birth = date_of_birth
+    player.region = region
+    player.country = country
+    player.team = team
+    player.tis_won = tis_won
+    player.prize_money = prize_money
+
+    await player.save()
+
+    res.status(200)
+    res.json({
+      _id: player._id,
+      steam_id: player.steam_id,
+      name: player.name,
+      profile_image: player.profile_image,
+      date_of_birth: player.date_of_birth,
+      region: player.region,
+      country: player.country,
+      team: player.team,
+      tis_won: player.tis_won,
+      prize_money: player.prize_money,
+    })
+  } catch (error) {
+    throw new Error(error)
+  }
+})
