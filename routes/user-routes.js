@@ -7,28 +7,23 @@ import {
   updateUserById,
 } from '../controllers/user-controller.js'
 
-import { check } from 'express-validator'
+import protect from '../middlewares/protect-middleware.js'
+
+import {
+  validateUserRegistrationRequest,
+  validateUserLoginRequest,
+  validateUserUpdateRequest,
+} from '../validators/user-validator.js'
 
 const router = express.Router()
 
-router.post(
-  '/register',
-  [
-    check('email')
-      .isEmail()
-      .withMessage('Please provide a valid Email Address'),
-    check('email').notEmpty(),
-  ],
-  registerUser
-)
+router.route('/register').post(validateUserRegistrationRequest, registerUser)
 
-router.post(
-  '/login',
-  [check('email').normalizeEmail().isEmail(), check('email').notEmpty()],
-  loginUser
-)
+router.route('/login').post(validateUserLoginRequest, loginUser)
 
-router.get('/:uid', getUserById)
-router.patch('/:uid', updateUserById)
+router
+  .route('/profile')
+  .get(protect, getUserById)
+  .patch(validateUserUpdateRequest, protect, updateUserById)
 
 export default router

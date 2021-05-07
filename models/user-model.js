@@ -9,7 +9,7 @@ const userSchema = mongoose.Schema({
   date_of_birth: { type: String, required: true },
   alias: { type: String, required: true },
   role: { type: String, required: true, default: 'user' },
-  contact: { type: String, required: true },
+  contact: { type: String, required: true, length: 10 },
   country: { type: String, required: true, default: 'India' },
   profile_image: { type: String, required: true, default: 'http://arcana.png' },
 })

@@ -91,10 +91,8 @@ export const loginUser = asyncHandler(async (req, res) => {
 })
 
 export const getUserById = asyncHandler(async (req, res) => {
-  const user_id = req.params.uid
-
   try {
-    const user = await User.findById(user_id)
+    const user = await User.findById(req.user._id)
 
     if (!user) {
       res.status(404)
@@ -119,12 +117,9 @@ export const getUserById = asyncHandler(async (req, res) => {
 })
 
 export const updateUserById = asyncHandler(async (req, res) => {
-  const user_id = req.params.uid
-
   try {
+    const user = await User.findById(req.user._id)
     const { name, alias, contact, date_of_birth, profile_image } = req.body
-
-    const user = await User.findById(user_id)
 
     if (!user) {
       res.status(404)
