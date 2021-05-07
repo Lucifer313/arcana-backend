@@ -13,7 +13,12 @@ const router = express.Router()
 
 router.post(
   '/register',
-  [check('email').normalizeEmail().isEmail(), check('email').notEmpty()],
+  [
+    check('email')
+      .isEmail()
+      .withMessage('Please provide a valid Email Address'),
+    check('email').notEmpty(),
+  ],
   registerUser
 )
 

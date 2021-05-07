@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import asyncHandler from 'express-async-handler'
 import { validationResult } from 'express-validator'
+import bcrypt from 'bcrypt'
 
 import generateToken from '../utils/generate-token.js'
 
@@ -8,7 +9,9 @@ import User from '../models/user-model.js'
 
 export const registerUser = asyncHandler(async (req, res) => {
   if (!validationResult(req).isEmpty()) {
-    throw new Error('Please provide valid inputs')
+    const errors = validationResult(req)
+    res.status(500)
+    res.json({ errors: errors.array() })
   }
 
   const {
@@ -20,6 +23,14 @@ export const registerUser = asyncHandler(async (req, res) => {
     contact,
     profile_image,
   } = req.body
+
+  //Logic to check if email address alread
+  const user = await User.findOne({ email })
+
+  if (user) {
+    res.status(500)
+    throw new Error('Email Address already in use')
+  }
 
   try {
     const user = await User.create({
@@ -56,7 +67,7 @@ export const loginUser = asyncHandler(async (req, res) => {
   try {
     const user = await User.findOne({ email })
 
-    if (user && user.password === password) {
+    if (user && (await user.matchPassword(password))) {
       res
         .json({
           name: user.name,
@@ -72,7 +83,7 @@ export const loginUser = asyncHandler(async (req, res) => {
         .status(200)
     } else {
       res.status(404)
-      throw new Error('Invalid email or password2')
+      throw new Error('Invalid email or password')
     }
   } catch (error) {
     throw new Error(error)
