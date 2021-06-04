@@ -1,19 +1,13 @@
 import mongoose from 'mongoose'
 import asyncHandler from 'express-async-handler'
-import { validationResult } from 'express-validator'
-import bcrypt from 'bcrypt'
+import nodemailer from 'nodemailer'
 
 import generateToken from '../utils/generate-token.js'
+import { sendConfirmationEmail } from '../utils/send-email.js'
 
 import User from '../models/user-model.js'
 
 export const registerUser = asyncHandler(async (req, res) => {
-  if (!validationResult(req).isEmpty()) {
-    const errors = validationResult(req)
-    res.status(500)
-    res.json({ errors: errors.array() })
-  }
-
   const {
     name,
     email,
@@ -43,6 +37,12 @@ export const registerUser = asyncHandler(async (req, res) => {
       profile_image,
     })
 
+    //Generating jwt_token for email and response
+    const jwt_token = generateToken(user._id)
+
+    //Sending confirmation email
+    sendConfirmationEmail(jwt_token, email)
+
     res
       .json({
         _id: user._id,
@@ -53,10 +53,11 @@ export const registerUser = asyncHandler(async (req, res) => {
         contact: user.contact,
         country: user.country,
         profile_image: user.profile_image,
-        token: generateToken(user._id),
+        token: jwt_token,
       })
       .status(201)
   } catch (error) {
+    console.log(error)
     throw new Error(error)
   }
 })

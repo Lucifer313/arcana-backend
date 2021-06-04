@@ -2,19 +2,12 @@ import mongoose from 'mongoose'
 import asyncHandler from 'express-async-handler'
 import Team from '../models/team-model.js'
 import Player from '../models/player-model.js'
+import fs from 'fs'
 
 //Create a New Team //
 export const createTeam = asyncHandler(async (req, res) => {
   //Extracting the request body for values
-  const {
-    name,
-    logo,
-    region,
-    tis_won,
-    description,
-    creation_date,
-    banner_image,
-  } = req.body
+  const { name, region, description, tis_won, creation_date } = req.body
 
   try {
     //Creating a new Team object and record at the same time
@@ -22,8 +15,8 @@ export const createTeam = asyncHandler(async (req, res) => {
       name,
       region,
       description,
-      logo,
-      banner_image,
+      logo: req.file.path,
+      banner_image: 'http://bannergg.png',
       tis_won,
       creation_date,
     })
@@ -41,6 +34,7 @@ export const createTeam = asyncHandler(async (req, res) => {
       creation_date: team.creation_date,
     })
   } catch (error) {
+    console.log(error)
     throw new Error(error)
   }
 })
@@ -53,7 +47,7 @@ export const getTeams = asyncHandler(async (req, res, next) => {
 
     //Sending responses
     res.status(200)
-    res.json({ teams })
+    res.json(teams)
   } catch (error) {
     throw new Error(error)
   }
@@ -75,16 +69,7 @@ export const getTeamById = asyncHandler(async (req, res, next) => {
 
     //Else sending responses
     res.status(200)
-    res.json({
-      _id: team._id,
-      name: team.name,
-      region: team.region,
-      description: team.description,
-      logo: team.logo,
-      banner_image: team.banner_image,
-      tis_won: team.tis_won,
-      creation_date: team.creation_date,
-    })
+    res.json(team)
   } catch (error) {
     throw new Error(error)
   }
@@ -102,6 +87,10 @@ export const deleteTeamById = asyncHandler(async (req, res, next) => {
     if (!team) {
       res.status(404)
       throw new Error('Team not found')
+    } else {
+      fs.unlink(team.logo, (error) => {
+        console.log(error)
+      })
     }
     //Deleting the team
     await team.remove()
@@ -132,21 +121,21 @@ export const updateTeamById = asyncHandler(async (req, res) => {
     //Extracting the request body for updated values
     const {
       name,
-      logo,
+      //logo,
       region,
-      tis_won,
       description,
+      tis_won,
       creation_date,
-      banner_image,
+      //banner_image,
     } = req.body
 
     team.name = name
-    team.logo = logo
+    team.logo = 'http://gg.png'
     team.region = region
     team.tis_won = tis_won
     team.description = description
     team.creation_date = creation_date
-    team.banner_image = banner_image
+    team.banner_image = 'http://banner.png'
 
     await team.save()
 

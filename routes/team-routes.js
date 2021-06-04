@@ -9,11 +9,13 @@ import {
   getTeamPlayers,
 } from '../controllers/team-controller.js'
 
+import mediaUpload from '../middlewares/media-upload.js'
+
 import { validateTeamRequest } from '../validators/team-validator.js'
 
 const router = express.Router()
 
-router.route('/create-team').post(validateTeamRequest, createTeam)
+router.post('/create', mediaUpload.single('logo'), createTeam)
 router.get('/', getTeams)
 router.get('/:tid', getTeamById)
 router.delete('/:tid', deleteTeamById)

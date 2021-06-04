@@ -28,6 +28,7 @@ app.use(express.json())
 app.use('/users', userRoutes)
 app.use('/teams', teamRoutes)
 app.use('/players', playerRoutes)
+app.use('/uploads/images', express.static(path.join('uploads', 'images')))
 
 app.use(routeNotFound)
 app.use(errorHandler)
