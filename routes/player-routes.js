@@ -1,4 +1,5 @@
 import express from 'express'
+import mediaUpload from '../middlewares/media-upload.js'
 
 import {
   createPlayer,
@@ -12,7 +13,7 @@ import { validatePlayerRequest } from '../validators/player-validator.js'
 
 const router = express.Router()
 
-router.route('/create-player').post(validatePlayerRequest, createPlayer)
+router.post('/create-player', mediaUpload.single('profile_image'), createPlayer)
 router.get('/', getPlayers)
 router.get('/:pid', getPlayerById)
 router.delete('/:pid', deletePlayerById)

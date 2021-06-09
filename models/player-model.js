@@ -4,6 +4,7 @@ const playerSchema = mongoose.Schema(
   {
     name: { type: String, required: true },
     alias: { type: String, required: true },
+    role: { type: String, required: true },
     steam_id: { type: String, required: true, default: '10000' },
     profile_image: { type: String, required: true },
     date_of_birth: { type: String, required: true },

@@ -19,7 +19,7 @@ router.post('/create', mediaUpload.single('logo'), createTeam)
 router.get('/', getTeams)
 router.get('/:tid', getTeamById)
 router.delete('/:tid', deleteTeamById)
-router.route('/:tid').patch(validateTeamRequest, updateTeamById)
+router.route('/:tid').patch(updateTeamById)
 router.get('/:tid/players', getTeamPlayers)
 
 export default router

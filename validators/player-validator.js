@@ -5,8 +5,8 @@ export const validatePlayerRequest = [
     .notEmpty()
     .withMessage('Player name cannot be empty')
     .bail()
-    .isLength({ min: 5 })
-    .withMessage('Player name should be atleast 2 characters')
+    .isLength({ min: 3 })
+    .withMessage('Player name should be atleast 3 characters')
     .bail(),
   check('alias')
     .notEmpty()
@@ -15,6 +15,7 @@ export const validatePlayerRequest = [
     .isLength({ min: 2 })
     .withMessage('Player alias should be atleast 2 characters')
     .bail(),
+  check('role').notEmpty().withMessage('Player role cannot be empty'),
   check('profile_image')
     .notEmpty()
     .withMessage('Player profile image cannot be empty')
@@ -27,8 +28,8 @@ export const validatePlayerRequest = [
     .notEmpty()
     .withMessage('Player region cannot be empty')
     .bail()
-    .isLength({ min: 3 })
-    .withMessage('Player region should be atleast 3 characters')
+    .isLength({ min: 2 })
+    .withMessage('Player region should be atleast 2 characters')
     .bail(),
   check('country')
     .notEmpty()
@@ -54,8 +55,10 @@ export const validatePlayerRequest = [
     .bail(),
   (req, res, next) => {
     const errors = validationResult(req)
-    if (!errors.isEmpty())
+    if (!errors.isEmpty()) {
+      console.log(errors)
       return res.status(422).json({ errors: errors.array() })
+    }
     next()
   },
 ]

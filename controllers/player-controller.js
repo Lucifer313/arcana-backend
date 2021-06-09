@@ -6,7 +6,8 @@ export const createPlayer = asyncHandler(async (req, res, next) => {
   const {
     name,
     alias,
-    profile_image,
+    role,
+    steam_id,
     date_of_birth,
     region,
     country,
@@ -19,7 +20,9 @@ export const createPlayer = asyncHandler(async (req, res, next) => {
     const player = await Player.create({
       name,
       alias,
-      profile_image,
+      role,
+      steam_id,
+      profile_image: req.file.path,
       date_of_birth,
       region,
       country,
@@ -48,7 +51,7 @@ export const createPlayer = asyncHandler(async (req, res, next) => {
 
 export const getPlayers = asyncHandler(async (req, res) => {
   try {
-    const players = await Player.find({})
+    const players = await Player.find({}).populate('team')
 
     if (!players) {
       res.status(404)
@@ -56,7 +59,7 @@ export const getPlayers = asyncHandler(async (req, res) => {
     }
 
     res.status(200)
-    res.json({ players })
+    res.json(players)
   } catch (error) {
     throw new Error(error)
   }
