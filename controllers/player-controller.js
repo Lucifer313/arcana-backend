@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import asyncHandler from 'express-async-handler'
 import Player from '../models/player-model.js'
+import fs from 'fs'
 
 export const createPlayer = asyncHandler(async (req, res, next) => {
   const {
@@ -122,6 +123,8 @@ export const updatePlayerById = asyncHandler(async (req, res, next) => {
   try {
     const player = await Player.findById(player_id)
 
+    const previousImagePath = player.profile_image
+
     if (!player) {
       res.status(404)
       throw new Error('Player not found')
@@ -130,7 +133,7 @@ export const updatePlayerById = asyncHandler(async (req, res, next) => {
     const {
       name,
       alias,
-      profile_image,
+      role,
       date_of_birth,
       region,
       country,
@@ -141,13 +144,21 @@ export const updatePlayerById = asyncHandler(async (req, res, next) => {
 
     player.name = name
     player.alias = alias
-    player.profile_image = profile_image
+    player.role = role
     player.date_of_birth = date_of_birth
     player.region = region
     player.country = country
     player.team = team
     player.tis_won = tis_won
     player.prize_money = prize_money
+
+    //Only if image is passed as a part of the update
+    if (req.file) {
+      player.profile_image = req.file.path
+      fs.unlink(previousImagePath, (error) => {
+        console.log(error)
+      })
+    }
 
     await player.save()
 
@@ -165,6 +176,7 @@ export const updatePlayerById = asyncHandler(async (req, res, next) => {
       prize_money: player.prize_money,
     })
   } catch (error) {
+    console.log(error)
     throw new Error(error)
   }
 })

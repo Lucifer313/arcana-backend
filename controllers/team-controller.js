@@ -118,10 +118,12 @@ export const updateTeamById = asyncHandler(async (req, res) => {
       throw new Error('Team not found')
     }
 
+    //Getting the previous path of the logo
+    const previousLogoFile = team.logo
+
     //Extracting the request body for updated values
     const {
       name,
-      //logo,
       region,
       description,
       tis_won,
@@ -130,12 +132,19 @@ export const updateTeamById = asyncHandler(async (req, res) => {
     } = req.body
 
     team.name = name
-    team.logo = 'http://gg.png'
     team.region = region
     team.tis_won = tis_won
     team.description = description
     team.creation_date = creation_date
     team.banner_image = 'http://banner.png'
+
+    //Only if image is changed
+    if (req.file) {
+      team.logo = req.file.path
+      fs.unlink(previousLogoFile, (error) => {
+        console.log(error)
+      })
+    }
 
     await team.save()
 
@@ -151,6 +160,7 @@ export const updateTeamById = asyncHandler(async (req, res) => {
       creation_date: team.creation_date,
     })
   } catch (error) {
+    console.log(error)
     throw new Error(error)
   }
 })
