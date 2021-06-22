@@ -10,6 +10,7 @@ const playerSchema = mongoose.Schema(
     country: { type: String, required: true },
     team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', required: true },
     tis_won: { type: String, required: true },
+    tournaments: [],
   },
   {
     timestamps: true,
