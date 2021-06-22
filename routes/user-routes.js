@@ -8,6 +8,7 @@ import {
 } from '../controllers/user-controller.js'
 
 import protect from '../middlewares/protect-middleware.js'
+import mediaUpload from '../middlewares/media-upload.js'
 
 import {
   validateUserRegistrationRequest,
@@ -17,7 +18,7 @@ import {
 
 const router = express.Router()
 
-router.route('/register').post(validateUserRegistrationRequest, registerUser)
+router.post('/register', mediaUpload.single('profile_image'), registerUser)
 
 router.route('/login').post(validateUserLoginRequest, loginUser)
 

@@ -7,7 +7,8 @@ import fs from 'fs'
 //Create a New Team //
 export const createTeam = asyncHandler(async (req, res) => {
   //Extracting the request body for values
-  const { name, region, description, tis_won, creation_date } = req.body
+  const { name, region, description, tis_won, best_performance, achievements } =
+    req.body
 
   try {
     //Creating a new Team object and record at the same time
@@ -18,7 +19,8 @@ export const createTeam = asyncHandler(async (req, res) => {
       logo: req.file.path,
       banner_image: 'http://bannergg.png',
       tis_won,
-      creation_date,
+      best_performance,
+      achievements,
     })
 
     //Sending responses
@@ -31,7 +33,8 @@ export const createTeam = asyncHandler(async (req, res) => {
       logo: team.logo,
       banner_image: team.banner_image,
       tis_won: team.tis_won,
-      creation_date: team.creation_date,
+      best_performance: team.best_performance,
+      achievements: team.achievements,
     })
   } catch (error) {
     console.log(error)
@@ -127,7 +130,8 @@ export const updateTeamById = asyncHandler(async (req, res) => {
       region,
       description,
       tis_won,
-      creation_date,
+      best_performance,
+      achievements,
       //banner_image,
     } = req.body
 
@@ -135,9 +139,10 @@ export const updateTeamById = asyncHandler(async (req, res) => {
     team.region = region
     team.tis_won = tis_won
     team.description = description
-    team.creation_date = creation_date
     team.banner_image = 'http://banner.png'
-
+    team.best_performance = best_performance
+    team.achievements = achievements
+    console.log('Best performance: ' + best_performance)
     //Only if image is changed
     if (req.file) {
       team.logo = req.file.path
@@ -156,8 +161,9 @@ export const updateTeamById = asyncHandler(async (req, res) => {
       description: team.description,
       logo: team.logo,
       banner_image: team.banner_image,
+      best_performance: team.best_performance,
+      achievements: team.achievements,
       tis_won: team.tis_won,
-      creation_date: team.creation_date,
     })
   } catch (error) {
     console.log(error)

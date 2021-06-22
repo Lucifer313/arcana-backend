@@ -2,16 +2,16 @@ import mongoose from 'mongoose'
 import bcrypt from 'bcrypt'
 
 const userSchema = mongoose.Schema({
-  name: { type: String, required: true },
+  first_name: { type: String, required: true },
+  last_name: { type: String, required: true },
   active: { type: Boolean, required: true, default: false },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   date_of_birth: { type: String, required: true },
   alias: { type: String, required: true },
   role: { type: String, required: true, default: 'user' },
-  contact: { type: String, required: true, length: 10 },
   country: { type: String, required: true, default: 'India' },
-  profile_image: { type: String, required: true, default: 'http://arcana.png' },
+  profile_image: { type: String, required: true },
 })
 
 userSchema.methods.matchPassword = async function (enteredPassword) {

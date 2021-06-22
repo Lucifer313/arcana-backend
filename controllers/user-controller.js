@@ -9,13 +9,13 @@ import User from '../models/user-model.js'
 
 export const registerUser = asyncHandler(async (req, res) => {
   const {
-    name,
+    first_name,
+    last_name,
     email,
     password,
     date_of_birth,
     alias,
-    contact,
-    profile_image,
+    country,
   } = req.body
 
   //Logic to check if email address alread
@@ -28,13 +28,14 @@ export const registerUser = asyncHandler(async (req, res) => {
 
   try {
     const user = await User.create({
-      name,
+      first_name,
+      last_name,
       email,
       password,
       date_of_birth,
       alias,
-      contact,
-      profile_image,
+      country,
+      profile_image: req.file.path,
     })
 
     //Generating jwt_token for email and response
@@ -46,11 +47,11 @@ export const registerUser = asyncHandler(async (req, res) => {
     res
       .json({
         _id: user._id,
-        name: user.name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         email: user.email,
         date_of_birth: user.date_of_birth,
         alias: user.alias,
-        contact: user.contact,
         country: user.country,
         profile_image: user.profile_image,
         token: jwt_token,

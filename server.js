@@ -11,6 +11,7 @@ import { routeNotFound, errorHandler } from './middlewares/error-middleware.js'
 import userRoutes from './routes/user-routes.js'
 import teamRoutes from './routes/team-routes.js'
 import playerRoutes from './routes/player-routes.js'
+import tournamentRoutes from './routes/tournament-routes.js'
 
 //Loading the Dotenv config file//
 dotenv.config()
@@ -28,6 +29,7 @@ app.use(express.json())
 app.use('/users', userRoutes)
 app.use('/teams', teamRoutes)
 app.use('/players', playerRoutes)
+app.use('/tournaments', tournamentRoutes)
 app.use('/uploads/images', express.static(path.join('uploads', 'images')))
 
 app.use(routeNotFound)

@@ -12,7 +12,8 @@ const teamSchema = mongoose.Schema(
       default: 'https://arcana-banner.png',
     },
     tis_won: { type: Number, required: true, min: 0 },
-    creation_date: { type: String, required: true },
+    best_performance: { type: String },
+    achievements: { type: String },
   },
   {
     timestamps: true,
