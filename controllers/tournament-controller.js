@@ -95,7 +95,7 @@ export const getQualifiedPlayersByRole = asyncHandler(async (req, res) => {
   try {
     const { role } = req.body
     const tournamentId = req.params.tid
-
+    console.log(tournamentId)
     let tournament = await Tournament.findById(tournamentId)
 
     if (!tournament) {
@@ -108,6 +108,7 @@ export const getQualifiedPlayersByRole = asyncHandler(async (req, res) => {
     res.status(200)
     res.json(players)
   } catch (error) {
+    console.log(error)
     throw new Error(error)
   }
 })
