@@ -9,7 +9,9 @@ const tournamentSchema = mongoose.Schema(
     begin_date: { type: String, required: true },
     end_date: { type: String, required: true },
     number_of_days: { type: String, required: true },
-    teams: [{ type: String, required: true }],
+    teams: [
+      { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Team' },
+    ],
   },
   {
     timestamps: true,

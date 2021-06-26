@@ -1,6 +1,7 @@
 import Tournament from '../models/torunament-model.js'
 import asyncHandler from 'express-async-handler'
 import Player from '../models/player-model.js'
+import Team from '../models/team-model.js'
 
 export const createTournament = asyncHandler(async (req, res) => {
   try {
@@ -62,7 +63,7 @@ export const createTournament = asyncHandler(async (req, res) => {
 
 export const getTournaments = asyncHandler(async (req, res) => {
   try {
-    const tournaments = await Tournament.find({})
+    const tournaments = await Tournament.find({}).populate('team')
     res.json(tournaments)
   } catch (error) {
     throw new Error(error)
@@ -91,9 +92,8 @@ export const deleteTournamentById = asyncHandler(async (req, res) => {
   }
 })
 //This route will give the players qualified for a selected tournament based on the provided role
-export const getQualifiedPlayersByRole = asyncHandler(async (req, res) => {
+export const getQualifiedPlayers = asyncHandler(async (req, res) => {
   try {
-    const { role } = req.body
     const tournamentId = req.params.tid
     console.log(tournamentId)
     let tournament = await Tournament.findById(tournamentId)
@@ -103,12 +103,36 @@ export const getQualifiedPlayersByRole = asyncHandler(async (req, res) => {
       throw new Error('Invalid tournament Id')
     }
 
-    let players = await Player.find({ team: { $in: tournament.teams }, role })
+    let players = await Player.find({
+      team: { $in: tournament.teams },
+    }).populate('team')
 
     res.status(200)
     res.json(players)
   } catch (error) {
     console.log(error)
+    throw new Error(error)
+  }
+})
+
+export const getQualifiedTeams = asyncHandler(async (req, res) => {
+  try {
+    const tournamentId = req.params.tid
+
+    let tournament = await Tournament.findById(tournamentId)
+
+    if (!tournament) {
+      res.status(404)
+      throw new Error('Invalid Tournament Id')
+    }
+
+    let teams = await Team.find({
+      _id: { $in: tournament.teams },
+    })
+
+    res.status(200)
+    res.json(teams)
+  } catch (error) {
     throw new Error(error)
   }
 })

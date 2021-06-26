@@ -35,7 +35,7 @@ export const registerUser = asyncHandler(async (req, res) => {
       date_of_birth,
       alias,
       country,
-      profile_image: req.file.path,
+      profile_image: 'http://gg.png',
     })
 
     //Generating jwt_token for email and response
