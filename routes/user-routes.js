@@ -5,6 +5,8 @@ import {
   loginUser,
   getUserById,
   updateUserById,
+  createArcanaTeam,
+  getMyTournaments,
 } from '../controllers/user-controller.js'
 
 import protect from '../middlewares/protect-middleware.js'
@@ -26,5 +28,8 @@ router
   .route('/profile')
   .get(protect, getUserById)
   .patch(validateUserUpdateRequest, protect, updateUserById)
+
+router.post('/tournaments/:tid/createArcanaTeam', createArcanaTeam)
+router.get('/:uid/my-tournaments/', getMyTournaments)
 
 export default router

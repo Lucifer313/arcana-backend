@@ -12,6 +12,7 @@ const userSchema = mongoose.Schema({
   role: { type: String, required: true, default: 'user' },
   country: { type: String, required: true, default: 'India' },
   profile_image: { type: String, required: true },
+  tournaments: [],
 })
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
