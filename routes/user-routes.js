@@ -7,6 +7,8 @@ import {
   updateUserById,
   createArcanaTeam,
   getMyTournaments,
+  addMyPlayingSquad,
+  allowAddingSquad,
 } from '../controllers/user-controller.js'
 
 import protect from '../middlewares/protect-middleware.js'
@@ -31,5 +33,8 @@ router
 
 router.post('/tournaments/:tid/createArcanaTeam', createArcanaTeam)
 router.get('/:uid/my-tournaments/', getMyTournaments)
+
+router.post('/:uid/add-playing-squad', addMyPlayingSquad)
+router.post('/:uid/allow-adding-squad', allowAddingSquad)
 
 export default router

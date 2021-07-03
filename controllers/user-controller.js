@@ -1,6 +1,7 @@
 import mongoose from 'mongoose'
 import asyncHandler from 'express-async-handler'
 import nodemailer from 'nodemailer'
+import Moment from 'moment'
 
 import generateToken from '../utils/generate-token.js'
 import { sendConfirmationEmail } from '../utils/send-email.js'
@@ -204,6 +205,110 @@ export const getMyTournaments = asyncHandler(async (req, res) => {
     res.status(200)
     res.json(user.tournaments)
   } catch (error) {
+    throw new Error(error)
+  }
+})
+
+export const addMyPlayingSquad = asyncHandler(async (req, res) => {
+  try {
+    //Variable for adding new Record
+    let newDay
+
+    const userId = req.params.uid
+
+    let user = await User.findById(userId)
+
+    if (!user) {
+      res.status(404)
+      throw new Error('Invalid User Id')
+    }
+
+    const { tournamentId, playingSquad, reserveSquad, addedAt } = req.body
+    //Extracting the days array from the selected Tournament
+    let currentTournament = await user.tournaments.filter(
+      (tournament) => tournament._id == tournamentId
+    )[0]
+    console.log(currentTournament)
+    let { days } = currentTournament
+
+    //Creating a new Day object
+    newDay = {
+      day: days.length + 1,
+      playingSquad,
+      reserveSquad,
+      addedAt,
+    }
+    //Appending the new day to the list of days
+    currentTournament.days = [...days, newDay]
+
+    //Getting the other tournaments into a new array
+    let updatedTournaments = user.tournaments.filter(
+      (tournament) => tournament._id != tournamentId
+    )
+
+    console.log(updatedTournaments.length)
+
+    //Combining other tournaments with updated tournament
+    updatedTournaments = [...updatedTournaments, currentTournament]
+
+    console.log(updatedTournaments.length)
+
+    //Assigning the updated tournament to the user
+    user.tournaments = updatedTournaments
+    await user.save()
+    res.json({ currentTournament })
+  } catch (error) {
+    console.log(error)
+    throw new Error(error)
+  }
+})
+
+export const allowAddingSquad = asyncHandler(async (req, res) => {
+  try {
+    let userId = req.params.uid
+    let allowed
+    let user = await User.findById(userId)
+
+    if (!user) {
+      res.status(404)
+      throw new Error('Invalid User ID')
+    }
+
+    let { tournamentId } = req.body
+    //Getting the concerned tournament Object
+    let tournament = user.tournaments.filter((t) => t._id == tournamentId)[0]
+    //Extracting the days from the tournament object
+    let { days } = tournament
+
+    //If days already exist then check for the previous day timestamps
+    if (days.length > 0) {
+      //Extracting the addedAt of the Last squad added
+      let lastSquadAddedAt = days[days.length - 1].addedAt
+
+      //Calculating the current time in Moment
+      let currentMoment = Moment().format('MM-DD-YYYY, h:mm:ss a')
+
+      let ms = Moment(currentMoment, 'MM-DD-YYYY, h:mm:ss a').diff(
+        Moment(lastSquadAddedAt, 'MM-DD-YYYY, h:mm:ss a').toISOString()
+      )
+      const d = Moment.duration(ms)
+      const num_hours = d._data.hours
+      const num_days = d._data.days
+
+      if (num_hours < 12 && num_days == 0) {
+        allowed = false
+      } else {
+        allowed = true
+      }
+    } else {
+      allowed = true
+    }
+
+    res.json(allowed)
+
+    //let currentMoment = Moment().format('MM DD YYYY, h:mm:ss a')
+  } catch (error) {
+    console.log(error)
     throw new Error(error)
   }
 })

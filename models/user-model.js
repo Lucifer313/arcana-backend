@@ -12,7 +12,20 @@ const userSchema = mongoose.Schema({
   role: { type: String, required: true, default: 'user' },
   country: { type: String, required: true, default: 'India' },
   profile_image: { type: String, required: true },
-  tournaments: [],
+  tournaments: [
+    {
+      days: [
+        {
+          day: { type: Number },
+          playingSquad: [],
+          reserveSquad: [],
+          addedAt: { type: String },
+        },
+      ],
+      teamPrediction: { type: String },
+      arcanaTeam: [],
+    },
+  ],
 })
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
