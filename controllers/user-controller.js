@@ -1,4 +1,3 @@
-import mongoose from 'mongoose'
 import asyncHandler from 'express-async-handler'
 import nodemailer from 'nodemailer'
 import Moment from 'moment'
@@ -8,6 +7,7 @@ import { sendConfirmationEmail } from '../utils/send-email.js'
 
 import User from '../models/user-model.js'
 import Tournament from '../models/torunament-model.js'
+import Player from '../models/player-model.js'
 
 export const registerUser = asyncHandler(async (req, res) => {
   const {
@@ -60,7 +60,6 @@ export const registerUser = asyncHandler(async (req, res) => {
       })
       .status(201)
   } catch (error) {
-    console.log(error)
     throw new Error(error)
   }
 })
@@ -182,6 +181,7 @@ export const createArcanaTeam = asyncHandler(async (req, res) => {
       arcanaTeam,
       teamPrediction,
       days: [],
+      //end_date: tournament.end_date
     }
 
     user.tournaments = [...user.tournaments, newTournament]
@@ -228,7 +228,7 @@ export const addMyPlayingSquad = asyncHandler(async (req, res) => {
     let currentTournament = await user.tournaments.filter(
       (tournament) => tournament._id == tournamentId
     )[0]
-    console.log(currentTournament)
+
     let { days } = currentTournament
 
     //Creating a new Day object
@@ -246,19 +246,14 @@ export const addMyPlayingSquad = asyncHandler(async (req, res) => {
       (tournament) => tournament._id != tournamentId
     )
 
-    console.log(updatedTournaments.length)
-
     //Combining other tournaments with updated tournament
     updatedTournaments = [...updatedTournaments, currentTournament]
-
-    console.log(updatedTournaments.length)
 
     //Assigning the updated tournament to the user
     user.tournaments = updatedTournaments
     await user.save()
     res.json({ currentTournament })
   } catch (error) {
-    console.log(error)
     throw new Error(error)
   }
 })
@@ -305,10 +300,56 @@ export const allowAddingSquad = asyncHandler(async (req, res) => {
     }
 
     res.json(allowed)
-
-    //let currentMoment = Moment().format('MM DD YYYY, h:mm:ss a')
   } catch (error) {
-    console.log(error)
+    throw new Error(error)
+  }
+})
+
+export const getSquadByDay = asyncHandler(async (req, res) => {
+  try {
+    let userId = req.params.uid
+    //Getting the user
+    let user = await User.findById(userId)
+
+    if (!user) {
+      res.status(404)
+      throw new Error('Invalid User ID')
+    }
+
+    const { tournamentId, day } = req.body
+    console.log('Day: ' + day)
+    //Getting the selected tournament for the user
+    let tournament = user.tournaments.filter((t) => t._id == tournamentId)[0]
+    if (!tournament) {
+      res.status(404)
+      throw new Error('Invalid Tournament ID')
+    }
+    //Getting the selected day for the selected tournament
+    let { days } = tournament
+
+    let selectedDay = days.filter((d) => d.day == day)[0]
+    //Sending the playing Squad and reserve Squad for that selected day
+    if (!selectedDay) {
+      res.status(404)
+      throw new Error('Invalid Day selection')
+    }
+
+    let playingSquadDetails = await Player.find({
+      _id: { $in: selectedDay.playingSquad },
+    }).populate('team')
+
+    let substituteSquadDetails = await Player.find({
+      _id: { $in: selectedDay.reserveSquad },
+    }).populate('team')
+
+    res.status(200)
+    res.json({
+      playingSquadIds: selectedDay.playingSquad,
+      reserveSquadIds: selectedDay.reserveSquad,
+      playingSquad: playingSquadDetails,
+      reserveSquad: substituteSquadDetails,
+    })
+  } catch (error) {
     throw new Error(error)
   }
 })

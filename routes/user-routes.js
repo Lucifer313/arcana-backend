@@ -9,6 +9,7 @@ import {
   getMyTournaments,
   addMyPlayingSquad,
   allowAddingSquad,
+  getSquadByDay,
 } from '../controllers/user-controller.js'
 
 import protect from '../middlewares/protect-middleware.js'
@@ -36,5 +37,6 @@ router.get('/:uid/my-tournaments/', getMyTournaments)
 
 router.post('/:uid/add-playing-squad', addMyPlayingSquad)
 router.post('/:uid/allow-adding-squad', allowAddingSquad)
+router.post('/:uid/get-squad-by-day', getSquadByDay)
 
 export default router
