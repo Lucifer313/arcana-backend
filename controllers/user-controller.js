@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler'
 import nodemailer from 'nodemailer'
 import Moment from 'moment'
+import mongoose from 'mongoose'
 
 import generateToken from '../utils/generate-token.js'
 import { sendConfirmationEmail } from '../utils/send-email.js'
@@ -305,6 +306,52 @@ export const allowAddingSquad = asyncHandler(async (req, res) => {
   }
 })
 
+export const getSquadByDayOptimized = asyncHandler(async (req, res) => {
+  let db = mongoose.connection
+
+  const userId = req.params.uid
+
+  const { tournamentId, day } = req.body
+
+  /*User.aggregate(
+    [
+      { $unwind: '$parent' },
+      {
+        $match: {
+          'parent.child._id': mongoose.Types.ObjectId(tournamentId),
+        },
+      },
+    ],
+    function (err, result) {
+      if (err) throw err
+      console.log(result)
+      res.json(result)
+    }
+  )*/
+
+  db.collection('users').find(
+    {
+      _id: mongoose.Types.ObjectId(userId),
+      /* tournaments: {
+        $elemMatch: {
+          _id: mongoose.Types.ObjectId(tournamentId),
+          days: {
+            $elemMatch: {
+              day: day,
+            },
+          },
+        },
+      },*/
+      'tournaments._id': mongoose.Types.ObjectId(tournamentId),
+    },
+    function (err, result) {
+      if (err) throw err
+      console.log(result)
+      res.json(result)
+    }
+  )
+})
+
 export const getSquadByDay = asyncHandler(async (req, res) => {
   try {
     let userId = req.params.uid
@@ -317,7 +364,7 @@ export const getSquadByDay = asyncHandler(async (req, res) => {
     }
 
     const { tournamentId, day } = req.body
-    console.log('Day: ' + day)
+    //console.log('Day: ' + day)
     //Getting the selected tournament for the user
     let tournament = user.tournaments.filter((t) => t._id == tournamentId)[0]
     if (!tournament) {
@@ -334,21 +381,47 @@ export const getSquadByDay = asyncHandler(async (req, res) => {
       throw new Error('Invalid Day selection')
     }
 
-    let playingSquadDetails = await Player.find({
-      _id: { $in: selectedDay.playingSquad },
-    }).populate('team')
+    let db = mongoose.connection
 
-    let substituteSquadDetails = await Player.find({
-      _id: { $in: selectedDay.reserveSquad },
-    }).populate('team')
+    let playSquad = selectedDay.playingSquad.map((s) =>
+      mongoose.Types.ObjectId(s)
+    )
 
-    res.status(200)
-    res.json({
-      playingSquadIds: selectedDay.playingSquad,
-      reserveSquadIds: selectedDay.reserveSquad,
-      playingSquad: playingSquadDetails,
-      reserveSquad: substituteSquadDetails,
-    })
+    let resSquad = selectedDay.reserveSquad.map((s) =>
+      mongoose.Types.ObjectId(s)
+    )
+
+    db.collection('players')
+      .aggregate([
+        {
+          $facet: {
+            playingSquadDetails: [
+              {
+                $match: {
+                  _id: { $in: playSquad },
+                },
+              },
+            ],
+            reserveSquadDetails: [
+              {
+                $match: {
+                  _id: { $in: resSquad },
+                },
+              },
+            ],
+          },
+        },
+      ])
+      .toArray()
+      .then((squad) => {
+        res.status(200)
+        res.json({
+          playingSquadIds: selectedDay.playingSquad,
+          reserveSquadIds: selectedDay.reserveSquad,
+          playingSquad: squad[0].playingSquadDetails,
+          reserveSquad: squad[0].reserveSquadDetails,
+        })
+      })
   } catch (error) {
     throw new Error(error)
   }
