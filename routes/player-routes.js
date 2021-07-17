@@ -9,6 +9,7 @@ import {
   updatePlayerById,
   addPoints,
   getPlayerLeaderboard,
+  getPlayerPointsByDay,
 } from '../controllers/player-controller.js'
 
 const router = express.Router()
@@ -21,5 +22,6 @@ router.patch('/:pid', mediaUpload.single('profile_image'), updatePlayerById)
 router.post('/add-points', addPoints)
 
 router.get('/:tid/player-leaderboard', getPlayerLeaderboard)
+router.get('/:pid/get-player-points-by-day', getPlayerPointsByDay)
 
 export default router

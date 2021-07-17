@@ -241,58 +241,84 @@ export const addPoints = asyncHandler(async (req, res) => {
   res.json('Done')
 })
 
+//Getting the Player Leaderboard
 export const getPlayerLeaderboard = asyncHandler(async (req, res) => {
   try {
     const tournamentId = mongoose.Types.ObjectId(req.params.tid)
 
-    let playerList = await Player.find({
-      $and: [{ 'tournaments.id': tournamentId }],
-    })
-      .select('alias tournaments team _id profile_image')
-      .sort({ 'tournaments.total_points': '-1' })
-
-    playerList.forEach((player) => {
-      player.tournaments = player.tournaments.filter(
-        (p) => p.id == req.params.tid
-      )
-    })
-    /* let db = mongoose.connection
+    let db = mongoose.connection
 
     db.collection('players')
       .aggregate([
         {
+          $unwind: '$tournaments',
+        },
+        {
           $match: {
-            'tournaments.id': mongoose.Types.ObjectId(
-              '60e1c8180c36a854dcc317f9'
-            ),
+            'tournaments.id': mongoose.Types.ObjectId(tournamentId),
           },
         },
         {
           $project: {
-            ROOT: {
-              $filter: {
-                input: '$tournaments',
-                as: 'tournaments',
-                cond: {
-                  $and: [
-                    {
-                      $eq: [
-                        '$$tournaments.id',
-                        mongoose.Types.ObjectId('60e1c8180c36a854dcc317f9'),
-                      ],
-                    },
-                  ],
-                },
-              },
-            },
+            'tournaments.total_points': 1,
+            alias: 1,
+            _id: 1,
+            profile_image: 1,
+          },
+        },
+        {
+          $sort: {
+            'tournaments.total_points': -1,
           },
         },
       ])
       .toArray()
       .then((docs) => {
         res.json(docs)
-      })*/
-    res.json(playerList)
+      })
+    //res.json(playerList)
+  } catch (error) {
+    throw new Error(error)
+  }
+})
+
+//Get Player points by Day
+export const getPlayerPointsByDay = asyncHandler(async (req, res) => {
+  try {
+    let playerID = mongoose.Types.ObjectId(req.params.pid)
+
+    const { tournamentId, day } = req.body
+
+    let db = mongoose.connection
+
+    db.collection('players')
+      .aggregate([
+        {
+          $unwind: '$tournaments',
+        },
+        {
+          $unwind: '$tournaments.points',
+        },
+        {
+          $match: {
+            _id: playerID,
+            'tournaments.id': mongoose.Types.ObjectId(tournamentId),
+            'tournaments.points.matchNum': day,
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            tournaments: 1,
+            alias: 1,
+            profile_image: 1,
+          },
+        },
+      ])
+      .toArray()
+      .then((docs) => {
+        res.json(docs)
+      })
   } catch (error) {
     throw new Error(error)
   }
