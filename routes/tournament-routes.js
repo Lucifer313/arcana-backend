@@ -1,5 +1,6 @@
 import express from 'express'
 import {
+  addPoints,
   createTournament,
   deleteTournamentById,
   getQualifiedPlayers,
@@ -14,5 +15,6 @@ router.get('/', getTournaments)
 router.delete('/:tid', deleteTournamentById)
 router.get('/:tid/qualified-players', getQualifiedPlayers)
 router.get('/:tid/qualified-teams', getQualifiedTeams)
+router.post('/add-points', addPoints)
 
 export default router

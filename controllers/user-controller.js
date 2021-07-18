@@ -213,47 +213,80 @@ export const getMyTournaments = asyncHandler(async (req, res) => {
 export const addMyPlayingSquad = asyncHandler(async (req, res) => {
   try {
     //Variable for adding new Record
+    const db = mongoose.connection
+
+    let { tournamentId, playingSquad, reserveSquad, addedAt } = req.body
+
     let newDay
 
-    const userId = req.params.uid
+    const dayNum = db
+      .collection('users')
+      .aggregate([
+        {
+          $unwind: '$tournaments',
+        },
+        {
+          $unwind: '$tournaments.days',
+        },
+        {
+          $match: {
+            _id: mongoose.Types.ObjectId(req.params.uid),
+            'tournaments._id': mongoose.Types.ObjectId(tournamentId),
+          },
+        },
+        {
+          $group: {
+            _id: '$tournaments._id',
+            maxDay: {
+              $max: '$tournaments.days.day',
+            },
+          },
+        },
+        {
+          $project: {
+            _id: 0,
+            maxDay: 1,
+          },
+        },
+      ])
+      .toArray()
 
-    let user = await User.findById(userId)
+    playingSquad = playingSquad.map((p) => {
+      return mongoose.Types.ObjectId(p)
+    })
 
-    if (!user) {
-      res.status(404)
-      throw new Error('Invalid User Id')
-    }
+    reserveSquad = reserveSquad.map((p) => {
+      return mongoose.Types.ObjectId(p)
+    })
 
-    const { tournamentId, playingSquad, reserveSquad, addedAt } = req.body
-    //Extracting the days array from the selected Tournament
-    let currentTournament = await user.tournaments.filter(
-      (tournament) => tournament._id == tournamentId
-    )[0]
+    dayNum.then((value) => {
+      let { maxDay } = value[0]
 
-    let { days } = currentTournament
+      newDay = {
+        day: maxDay + 1,
+        playingSquad,
+        reserveSquad,
+        addedAt,
+      }
+      //Inserting the new Squad
+      db.collection('users')
+        .updateOne(
+          {
+            _id: mongoose.Types.ObjectId(req.params.uid),
+            'tournaments._id': mongoose.Types.ObjectId(tournamentId),
+          },
+          {
+            $push: {
+              'tournaments.$.days': newDay,
+            },
+          }
+        )
+        .then(() => {
+          //Fetching the new Squad Details and sending it as a response
 
-    //Creating a new Day object
-    newDay = {
-      day: days.length + 1,
-      playingSquad,
-      reserveSquad,
-      addedAt,
-    }
-    //Appending the new day to the list of days
-    currentTournament.days = [...days, newDay]
-
-    //Getting the other tournaments into a new array
-    let updatedTournaments = user.tournaments.filter(
-      (tournament) => tournament._id != tournamentId
-    )
-
-    //Combining other tournaments with updated tournament
-    updatedTournaments = [...updatedTournaments, currentTournament]
-
-    //Assigning the updated tournament to the user
-    user.tournaments = updatedTournaments
-    await user.save()
-    res.json({ currentTournament })
+          res.json({ playingSquad, reserveSquad })
+        })
+    })
   } catch (error) {
     throw new Error(error)
   }
@@ -363,7 +396,7 @@ export const getSquadByDay = asyncHandler(async (req, res) => {
       throw new Error('Invalid User ID')
     }
 
-    const { tournamentId, day } = req.body
+    const { tournamentId, day, mode } = req.body
     //console.log('Day: ' + day)
     //Getting the selected tournament for the user
     let tournament = user.tournaments.filter((t) => t._id == tournamentId)[0]
@@ -390,38 +423,100 @@ export const getSquadByDay = asyncHandler(async (req, res) => {
     let resSquad = selectedDay.reserveSquad.map((s) =>
       mongoose.Types.ObjectId(s)
     )
-
-    db.collection('players')
-      .aggregate([
-        {
-          $facet: {
-            playingSquadDetails: [
-              {
-                $match: {
-                  _id: { $in: playSquad },
+    //Getting previous squads is mode is previous
+    if (mode === 'previous') {
+      db.collection('players')
+        .aggregate([
+          {
+            $facet: {
+              playingSquadDetails: [
+                {
+                  $unwind: '$tournaments',
                 },
-              },
-            ],
-            reserveSquadDetails: [
+                {
+                  $unwind: '$tournaments.points',
+                },
+                {
+                  $match: {
+                    _id: {
+                      $in: playSquad,
+                    },
+                    'tournaments.id': mongoose.Types.ObjectId(tournamentId),
+                    'tournaments.points.dayNum': day,
+                  },
+                },
+                {
+                  $group: {
+                    _id: '$_id',
+                    dayPoints: {
+                      $sum: '$tournaments.points.points',
+                    },
+                    alias: { $first: '$alias' },
+                    role: { $first: '$role' },
+                    tournamentId: { $first: '$tournaments.id' },
+                    profile_image: { $first: '$profile_image' },
+                  },
+                },
+                {
+                  $sort: {
+                    dayPoints: -1,
+                  },
+                },
+              ],
+              /*reserveSquadDetails: [
               {
                 $match: {
                   _id: { $in: resSquad },
                 },
               },
-            ],
+            ],*/
+            },
           },
-        },
-      ])
-      .toArray()
-      .then((squad) => {
-        res.status(200)
-        res.json({
-          playingSquadIds: selectedDay.playingSquad,
-          reserveSquadIds: selectedDay.reserveSquad,
-          playingSquad: squad[0].playingSquadDetails,
-          reserveSquad: squad[0].reserveSquadDetails,
+        ])
+        .toArray()
+        .then((squad) => {
+          res.status(200)
+          console.log()
+          res.json({
+            playingSquadIds: selectedDay.playingSquad,
+            reserveSquadIds: selectedDay.reserveSquad,
+            playingSquad: squad[0].playingSquadDetails,
+            //  reserveSquad: squad[0].reserveSquadDetails,
+          })
         })
-      })
+    } else if (mode === 'current') {
+      db.collection('players')
+        .aggregate([
+          {
+            $facet: {
+              playingSquadDetails: [
+                {
+                  $match: {
+                    _id: { $in: playSquad },
+                  },
+                },
+              ],
+              reserveSquadDetails: [
+                {
+                  $match: {
+                    _id: { $in: resSquad },
+                  },
+                },
+              ],
+            },
+          },
+        ])
+        .toArray()
+        .then((squad) => {
+          res.status(200)
+          res.json({
+            playingSquadIds: selectedDay.playingSquad,
+            reserveSquadIds: selectedDay.reserveSquad,
+            playingSquad: squad[0].playingSquadDetails,
+            reserveSquad: squad[0].reserveSquadDetails,
+          })
+        })
+    }
   } catch (error) {
     throw new Error(error)
   }

@@ -7,9 +7,9 @@ import {
   getPlayerById,
   deletePlayerById,
   updatePlayerById,
-  addPoints,
   getPlayerLeaderboard,
-  getPlayerPointsByDay,
+  getSinglePlayerPointsByDay,
+  getPlayersPointsByDay,
 } from '../controllers/player-controller.js'
 
 const router = express.Router()
@@ -19,9 +19,10 @@ router.get('/', getPlayers)
 router.get('/:pid', getPlayerById)
 router.delete('/:pid', deletePlayerById)
 router.patch('/:pid', mediaUpload.single('profile_image'), updatePlayerById)
-router.post('/add-points', addPoints)
 
 router.get('/:tid/player-leaderboard', getPlayerLeaderboard)
-router.get('/:pid/get-player-points-by-day', getPlayerPointsByDay)
+router.get('/:pid/get-single-player-points-by-day', getSinglePlayerPointsByDay)
+
+router.get('/:tid/get-players-points-by-day', getPlayersPointsByDay)
 
 export default router
