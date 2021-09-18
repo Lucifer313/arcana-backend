@@ -24,6 +24,7 @@ const userSchema = mongoose.Schema({
       ],
       teamPrediction: { type: String },
       arcanaTeam: [],
+      points: { type: Number },
     },
   ],
 })

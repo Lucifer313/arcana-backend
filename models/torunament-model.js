@@ -12,6 +12,8 @@ const tournamentSchema = mongoose.Schema(
     teams: [
       { type: mongoose.Schema.Types.ObjectId, required: true, ref: 'Team' },
     ],
+    eliminated_teams: [{ type: String }],
+    winner: { type: String, default: '' },
   },
   {
     timestamps: true,

@@ -25,6 +25,7 @@ const playerSchema = mongoose.Schema(
           },
         ],
         total_points: { type: Number },
+        eliminated: { type: Boolean },
       },
     ],
   },

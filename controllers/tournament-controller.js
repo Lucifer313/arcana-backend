@@ -39,6 +39,7 @@ export const createTournament = asyncHandler(async (req, res) => {
           id: tournament._id,
           points: [],
           total_points: 0,
+          eliminated: false,
         }
         //Appending the new object into the tournament's array
         player.tournaments = [...player.tournaments, newTournament]
@@ -93,29 +94,6 @@ export const deleteTournamentById = asyncHandler(async (req, res) => {
     throw new Error(error)
   }
 })
-//This route will give the players qualified for a selected tournament based on the provided role
-export const getQualifiedPlayers = asyncHandler(async (req, res) => {
-  try {
-    const tournamentId = req.params.tid
-    console.log(tournamentId)
-    let tournament = await Tournament.findById(tournamentId)
-
-    if (!tournament) {
-      res.status(404)
-      throw new Error('Invalid tournament Id')
-    }
-
-    let players = await Player.find({
-      team: { $in: tournament.teams },
-    }).populate('team')
-
-    res.status(200)
-    res.json(players)
-  } catch (error) {
-    console.log(error)
-    throw new Error(error)
-  }
-})
 
 export const getQualifiedTeams = asyncHandler(async (req, res) => {
   try {
@@ -132,8 +110,10 @@ export const getQualifiedTeams = asyncHandler(async (req, res) => {
       _id: { $in: tournament.teams },
     })
 
+    let eliminatedTeams = tournament.eliminated_teams
+
     res.status(200)
-    res.json(teams)
+    res.json({ teams, eliminatedTeams })
   } catch (error) {
     throw new Error(error)
   }
@@ -141,88 +121,274 @@ export const getQualifiedTeams = asyncHandler(async (req, res) => {
 
 //Main function to add Points
 export const addPoints = asyncHandler(async (req, res) => {
-  const { tournamentId, matchId, dayNum, matchNum, team1, team2 } = req.body
+  try {
+    const { tournamentId, matchId, dayNum, matchNum, team1, team2 } = req.body
+    let currentPlayer
+    let db = mongoose.connection
+    //Getting the data from Dota OPENAPI
+    let matchDetails = await axios.get(
+      `https://api.opendota.com/api/matches/${matchId}`
+    )
 
-  let db = mongoose.connection
-  //Getting the data from Dota OPENAPI
-  let matchDetails = await axios.get(
-    `https://api.opendota.com/api/matches/${matchId}`
-  )
+    //Extracting the player array
+    let {
+      data: { players },
+    } = matchDetails
+    //Looping through each player to calculate points and add it to their mongodb records
+    for (const player of players) {
+      //Extracting each parameter to be calculated and multiplying it with the multipliers
+      const kills = player.kills * 3
+      const deaths = player.deaths * -3
+      const assists = player.assists * 1.5
+      const gpm = player.gold_per_min * 0.02
+      const xpm = player.xp_per_min * 0.02
+      const last_hits = player.last_hits * 0.03
+      const first_blood = player.firstblood_claimed * 20
+      const heal = player.hero_healing * 0.002
+      const camps_stacked = player.camps_stacked * 6
+      const win = player.win * 40
+      //Purchase is a combination of wards, sod and dop
+      const {
+        purchase: { ward_sentry, smoke_of_deceit, dust_of_appearance },
+      } = player
 
-  //Extracting the player array
-  let {
-    data: { players },
-  } = matchDetails
-  //Looping through each player to calculate points and add it to their mongodb records
-  players.forEach((player) => {
-    //Extracting each parameter to be calculated and multiplying it with the multipliers
-    const kills = player.kills * 3
-    const deaths = player.deaths * -3
-    const assists = player.assists * 1.5
-    const gpm = player.gold_per_min * 0.02
-    const xpm = player.xp_per_min * 0.02
-    const last_hits = player.last_hits * 0.03
-    const first_blood = player.firstblood_claimed * 20
-    const heal = player.hero_healing * 0.002
-    const camps_stacked = player.camps_stacked * 6
-    const win = player.win * 40
-    //Purchase is a combination of wards, sod and dop
-    const {
-      purchase: { ward_sentry, smoke_of_deceit, dust_of_appearance },
-    } = player
+      //Calculating the support gold
+      const ward_sentry_gold = ward_sentry === undefined ? 0 : ward_sentry * 50
+      const smoke_of_deceit_gold =
+        smoke_of_deceit === undefined ? 0 : smoke_of_deceit * 50
+      const dust_of_appearance_gold =
+        dust_of_appearance === undefined ? 0 : dust_of_appearance * 80
+      //Multiplying the support gold with its multiplier
+      const support_gold =
+        (ward_sentry_gold + smoke_of_deceit_gold + dust_of_appearance_gold) *
+        0.005
+      //console.log(support_gold)
+      //Calculating the final points for the player
+      let points =
+        kills +
+        deaths +
+        assists +
+        gpm +
+        xpm +
+        last_hits +
+        first_blood +
+        heal +
+        camps_stacked +
+        win +
+        support_gold
 
-    //Calculating the support gold
-    const ward_sentry_gold = ward_sentry === undefined ? 0 : ward_sentry * 50
-    const smoke_of_deceit_gold =
-      smoke_of_deceit === undefined ? 0 : smoke_of_deceit * 50
-    const dust_of_appearance_gold =
-      dust_of_appearance === undefined ? 0 : dust_of_appearance * 80
-    //Multiplying the support gold with its multiplier
-    const support_gold =
-      (ward_sentry_gold + smoke_of_deceit_gold + dust_of_appearance_gold) *
-      0.005
-    //console.log(support_gold)
-    //Calculating the final points for the player
-    let points =
-      kills +
-      deaths +
-      assists +
-      gpm +
-      xpm +
-      last_hits +
-      first_blood +
-      heal +
-      camps_stacked +
-      win +
-      support_gold
+      //Rounding the points
+      points = Math.round(points * 100) / 100
 
-    //Rounding the points
-    points = Math.round(points * 100) / 100
+      // console.log(player.name + ' : ' + points)
 
-    // console.log(player.name + ' : ' + points)
+      //Adding the points to the player document
+      db.collection('players').updateOne(
+        {
+          alias: player.name,
+          'tournaments.id': mongoose.Types.ObjectId(tournamentId),
+        },
+        {
+          $push: {
+            'tournaments.$.points': {
+              dayNum,
+              matchNum,
+              team1,
+              team2,
+              points,
+            },
+          },
+          $inc: {
+            'tournaments.$.total_points': points,
+          },
+        }
+      )
+      //Getting the player Id
+      currentPlayer = await Player.find({ alias: player.name })
+      console.log(currentPlayer[0]._id)
+      //Logic to update user document if they have the current player in the squad
+      db.collection('users').updateMany(
+        {
+          'tournaments._id': mongoose.Types.ObjectId(tournamentId),
+          'tournaments.days.day': dayNum,
+          'tournaments.days.playingSquad': { $in: [currentPlayer[0]._id] },
+        },
+        {
+          $inc: {
+            'tournaments.$.points': points,
+          },
+        }
+      )
+    }
 
-    //Adding the points to the player document
-    db.collection('players').updateOne(
-      {
-        alias: player.name,
-        'tournaments.id': mongoose.Types.ObjectId(tournamentId),
-      },
-      {
-        $push: {
-          'tournaments.$.points': {
-            dayNum,
-            matchNum,
-            team1,
-            team2,
-            points,
+    res.json('done')
+  } catch (error) {
+    console.log(error)
+  }
+})
+//Getting the Player Leaderboard
+export const getPlayerLeaderboard = asyncHandler(async (req, res) => {
+  try {
+    const tournamentId = mongoose.Types.ObjectId(req.params.tid)
+
+    let db = mongoose.connection
+
+    db.collection('players')
+      .aggregate([
+        {
+          $unwind: '$tournaments',
+        },
+        {
+          $match: {
+            'tournaments.id': mongoose.Types.ObjectId(tournamentId),
           },
         },
-        $inc: {
-          'tournaments.$.total_points': points,
+        {
+          $project: {
+            'tournaments.total_points': 1,
+            alias: 1,
+            _id: 1,
+            profile_image: 1,
+          },
         },
-      }
-    )
-  })
+        {
+          $sort: {
+            'tournaments.total_points': -1,
+          },
+        },
+      ])
+      .toArray()
+      .then((docs) => {
+        res.json(docs)
+      })
+    //res.json(playerList)
+  } catch (error) {
+    throw new Error(error)
+  }
+})
 
-  res.json('Done')
+export const getQualifiedPlayers = asyncHandler(async (req, res) => {
+  try {
+    let tournamentId = mongoose.Types.ObjectId(req.params.tid)
+    let db = mongoose.connection
+
+    db.collection('players')
+      .aggregate([
+        {
+          $unwind: '$tournaments',
+        },
+        {
+          $lookup: {
+            from: 'teams',
+            localField: 'team',
+            foreignField: '_id',
+            as: 'team_info',
+          },
+        },
+        {
+          $match: {
+            'tournaments.id': mongoose.Types.ObjectId(tournamentId),
+          },
+        },
+      ])
+      .toArray()
+      .then((docs) => {
+        res.json(docs)
+      })
+  } catch (error) {
+    console.log(error)
+    throw new Error(error)
+  }
+})
+
+export const eliminateTeam = asyncHandler(async (req, res) => {
+  try {
+    let tournamentId = req.params.tid
+    const { teamId } = req.body
+
+    let tournament = await Tournament.findById(tournamentId)
+
+    if (!tournament) {
+      res.status(404)
+      throw new Error('Invalid Tournament ID')
+    }
+
+    tournament.eliminated_teams = [...tournament.eliminated_teams, teamId]
+
+    await tournament.save()
+
+    res.status(200)
+    res.json(tournament.eliminated_teams)
+  } catch (error) {
+    throw new Error(error)
+  }
+})
+
+export const undoEliminateTeam = asyncHandler(async (req, res) => {
+  try {
+    let tournamentId = req.params.tid
+    const { teamId } = req.body
+
+    let tournament = await Tournament.findById(tournamentId)
+
+    if (!tournament) {
+      res.status(404)
+      throw new Error('Invalid Tournament ID')
+    }
+
+    let updatedEliminatedTeams = tournament.eliminated_teams
+
+    updatedEliminatedTeams = updatedEliminatedTeams.filter((team) => {
+      return team !== teamId
+    })
+
+    tournament.eliminated_teams = updatedEliminatedTeams
+
+    await tournament.save()
+    res.status(200)
+    res.json(tournament.eliminated_teams)
+  } catch (error) {
+    throw new Error(error)
+  }
+})
+
+export const getArcanaLeaderboard = asyncHandler(async (req, res) => {
+  try {
+    let tournamentId = mongoose.Types.ObjectId(req.params.tid)
+    let db = mongoose.connection
+
+    db.collection('users')
+      .aggregate([
+        {
+          $unwind: '$tournaments',
+        },
+        {
+          $match: {
+            'tournaments._id': mongoose.Types.ObjectId(tournamentId),
+          },
+        },
+        {
+          $project: {
+            _id: 1,
+            first_name: 1,
+            last_name: 1,
+            alias: 1,
+            'tournaments.points': 1,
+            profile_image: 1,
+          },
+        },
+        {
+          $sort: {
+            'tournaments.total_points': -1,
+          },
+        },
+      ])
+      .toArray()
+      .then((docs) => {
+        console.log(docs)
+        res.json(docs)
+      })
+  } catch (error) {
+    throw new Error(error)
+  }
 })

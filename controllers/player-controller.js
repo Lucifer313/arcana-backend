@@ -154,47 +154,6 @@ export const updatePlayerById = asyncHandler(async (req, res, next) => {
   }
 })
 
-//Getting the Player Leaderboard
-export const getPlayerLeaderboard = asyncHandler(async (req, res) => {
-  try {
-    const tournamentId = mongoose.Types.ObjectId(req.params.tid)
-
-    let db = mongoose.connection
-
-    db.collection('players')
-      .aggregate([
-        {
-          $unwind: '$tournaments',
-        },
-        {
-          $match: {
-            'tournaments.id': mongoose.Types.ObjectId(tournamentId),
-          },
-        },
-        {
-          $project: {
-            'tournaments.total_points': 1,
-            alias: 1,
-            _id: 1,
-            profile_image: 1,
-          },
-        },
-        {
-          $sort: {
-            'tournaments.total_points': -1,
-          },
-        },
-      ])
-      .toArray()
-      .then((docs) => {
-        res.json(docs)
-      })
-    //res.json(playerList)
-  } catch (error) {
-    throw new Error(error)
-  }
-})
-
 //Get Player points by Day
 export const getSinglePlayerPointsByDay = asyncHandler(async (req, res) => {
   try {

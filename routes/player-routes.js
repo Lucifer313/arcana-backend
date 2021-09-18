@@ -7,7 +7,6 @@ import {
   getPlayerById,
   deletePlayerById,
   updatePlayerById,
-  getPlayerLeaderboard,
   getSinglePlayerPointsByDay,
   getPlayersPointsByDay,
 } from '../controllers/player-controller.js'
@@ -20,7 +19,6 @@ router.get('/:pid', getPlayerById)
 router.delete('/:pid', deletePlayerById)
 router.patch('/:pid', mediaUpload.single('profile_image'), updatePlayerById)
 
-router.get('/:tid/player-leaderboard', getPlayerLeaderboard)
 router.get('/:pid/get-single-player-points-by-day', getSinglePlayerPointsByDay)
 
 router.get('/:tid/get-players-points-by-day', getPlayersPointsByDay)
