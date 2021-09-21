@@ -17,11 +17,18 @@ const protect = asyncHandler(async (req, res, next) => {
       next()
     } catch (error) {
       res.status(401)
-      console.log(error)
-      throw new Error('Unauthorized. Invalid token')
+
+      if (error.message === 'jwt expired') {
+        throw new Error(
+          'Reset password link expired. Please go to forgot password page to generate a new reset password link'
+        )
+      } else {
+        throw new Error('Unauthorized. Invalid token')
+      }
     }
   } else {
     res.status(401)
+
     throw new Error('Unauthorized. Token not found')
   }
 })

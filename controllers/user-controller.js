@@ -8,7 +8,7 @@ import jwt from 'jsonwebtoken'
 import dotenv from 'dotenv'
 
 import generateToken from '../utils/generate-token.js'
-import { sendConfirmationEmail } from '../utils/send-email.js'
+import { sendEmail } from '../utils/send-email.js'
 
 import User from '../models/user-model.js'
 import Tournament from '../models/torunament-model.js'
@@ -46,10 +46,16 @@ export const registerUser = asyncHandler(async (req, res) => {
     })
 
     //Generating jwt_token for email and response
-    const jwt_token = generateToken(user._id)
+    const jwt_token = generateToken(user._id, 'login')
+
+    //Setting up the email-confirmation url
+    const confirmation_url = `${process.env.BASE_URL}/confirmation/${jwt_token}`
+
+    //Setting up the email body
+    let emailMessageBody = `<p>Dear ${user.alias},<br>Thank you for registering to Arcana League. The Fantasy League platform built only for the Champions.</p><p>Please click on this link to confirm your email address.</p><p> <a href="${confirmation_url}">Verify my Arcana League Account</a></p><p>Thanks,<br>ArcanaLeague Team</p>`
 
     //Sending confirmation email
-    sendConfirmationEmail(jwt_token, email)
+    sendEmail(email, emailMessageBody)
 
     res
       .json({
@@ -97,12 +103,61 @@ export const loginUser = asyncHandler(async (req, res) => {
           country: user.country,
           profile_image: user.profile_image,
           tournaments: user.tournaments,
-          token: generateToken(user._id),
+          token: generateToken(user._id, 'login'),
         })
         .status(200)
     } else {
       res.status(404)
       throw new Error('Invalid email or password')
+    }
+  } catch (error) {
+    console.log(error)
+    throw new Error(error)
+  }
+})
+
+export const forgotPassword = asyncHandler(async (req, res) => {
+  try {
+    const { email } = req.body
+
+    let user = await User.findOne({ email })
+
+    if (!user) {
+      res.status(404)
+      throw new Error(
+        'No user found for the provided email. Please provide another email ID'
+      )
+    } else {
+      const jwt_token = generateToken(user._id, 'reset-password')
+      let resetPasswordURL = `${process.env.BASE_URL_FRONT}/reset-password/${jwt_token}`
+      const messageBody = `<p>Dear ${user.alias}, </p><p>Please click on the link below to reset your password. <p><a href=${resetPasswordURL}>Reset my Password</a></p><p><strong>Remember, this link will expire after 10 minutes. So kindly reset your password within the provided timeframe.</p><p>Thanks,<br>ArcanaLeague Team</p>`
+
+      sendEmail(email, messageBody)
+      res.json('Email sent').status(200)
+    }
+  } catch (error) {
+    throw new Error(error)
+  }
+})
+
+export const resetPassword = asyncHandler(async (req, res) => {
+  try {
+    const { password } = req.body
+
+    let user = await User.findById(req.user._id)
+
+    if (!user) {
+      res.status(404)
+      throw new Error('Invalid user ID')
+    } else if (user.password === password) {
+      throw new Error(
+        'Your New and Current password are the same. Please provide a different password or login to the platform directly.'
+      )
+    } else {
+      user.password = password
+      await user.save()
+
+      res.json('Password updated successfully.').status(200)
     }
   } catch (error) {
     console.log(error)
