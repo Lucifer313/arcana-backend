@@ -12,6 +12,7 @@ import userRoutes from './routes/user-routes.js'
 import teamRoutes from './routes/team-routes.js'
 import playerRoutes from './routes/player-routes.js'
 import tournamentRoutes from './routes/tournament-routes.js'
+import { activateUserAccount } from './controllers/user-controller.js'
 
 //Loading the Dotenv config file//
 dotenv.config()
@@ -31,6 +32,7 @@ app.use('/teams', teamRoutes)
 app.use('/players', playerRoutes)
 app.use('/tournaments', tournamentRoutes)
 app.use('/uploads/images', express.static(path.join('uploads', 'images')))
+app.use('/confirmation/:jid', activateUserAccount)
 
 app.use(routeNotFound)
 app.use(errorHandler)

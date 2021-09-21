@@ -2,6 +2,10 @@ import asyncHandler from 'express-async-handler'
 import nodemailer from 'nodemailer'
 import Moment from 'moment'
 import mongoose from 'mongoose'
+import fs from 'fs'
+import jwt from 'jsonwebtoken'
+
+import dotenv from 'dotenv'
 
 import generateToken from '../utils/generate-token.js'
 import { sendConfirmationEmail } from '../utils/send-email.js'
@@ -38,7 +42,7 @@ export const registerUser = asyncHandler(async (req, res) => {
       date_of_birth,
       alias,
       country,
-      profile_image: 'http://gg.png',
+      profile_image: req.file.path,
     })
 
     //Generating jwt_token for email and response
@@ -67,15 +71,24 @@ export const registerUser = asyncHandler(async (req, res) => {
 
 export const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body
+  console.log(email)
 
   try {
     const user = await User.findOne({ email })
+    console.log(user)
+    if (user.active === false) {
+      res.status(500)
+      throw new Error(
+        'Your account is inactive. Please activate your account by clicking on the verification link and then try again.'
+      )
+    }
 
     if (user && (await user.matchPassword(password))) {
       res
         .json({
           _id: user._id,
-          name: user.name,
+          first_name: user.first_name,
+          last_name: user.last_name,
           email: user.email,
           alias: user.alias,
           role: user.role,
@@ -92,7 +105,28 @@ export const loginUser = asyncHandler(async (req, res) => {
       throw new Error('Invalid email or password')
     }
   } catch (error) {
+    console.log(error)
     throw new Error(error)
+  }
+})
+
+export const activateUserAccount = asyncHandler(async (req, res) => {
+  try {
+    dotenv.config()
+    const token = req.params.jid
+
+    const decodedToken = jwt.verify(token, process.env.JWTSECRET)
+
+    let user = await User.findById(decodedToken.id)
+
+    user.active = true
+
+    await user.save()
+    res.redirect(`${process.env.BASE_URL_FRONT}/login`)
+  } catch (error) {
+    res.status(401)
+    console.log(error)
+    throw new Error('Unauthorized. Invalid token')
   }
 })
 
@@ -126,32 +160,43 @@ export const getUserById = asyncHandler(async (req, res) => {
 export const updateUserById = asyncHandler(async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
-    const { name, alias, contact, date_of_birth, profile_image } = req.body
+    const { first_name, last_name, alias, date_of_birth, token } = req.body
+
+    const previousImagePath = user.profile_image
 
     if (!user) {
       res.status(404)
       throw new Error('Invalid user id')
     }
 
-    user.name = name
+    user.first_name = first_name
+    user.last_name = last_name
     user.alias = alias
-    user.contact = contact
     user.date_of_birth = date_of_birth
-    user.profile_image = profile_image
+
+    //Only if image is passed as a part of the update
+    if (req.file) {
+      user.profile_image = req.file.path
+      fs.unlink(previousImagePath, (error) => {
+        console.log(error)
+      })
+    }
 
     await user.save()
 
     res
       .json({
         _id: user._id,
-        name: user.name,
+        first_name: user.first_name,
+        last_name: user.last_name,
         email: user.email,
         alias: user.alias,
-        contact: user.contact,
         role: user.role,
         date_of_birth: user.date_of_birth,
         country: user.country,
         profile_image: user.profile_image,
+        tournaments: user.tournaments,
+        token,
       })
       .status(200)
   } catch (error) {
@@ -182,6 +227,7 @@ export const createArcanaTeam = asyncHandler(async (req, res) => {
       arcanaTeam,
       teamPrediction,
       days: [],
+      points: 0,
       //end_date: tournament.end_date
     }
 

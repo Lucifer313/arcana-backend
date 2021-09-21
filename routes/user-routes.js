@@ -25,12 +25,16 @@ const router = express.Router()
 
 router.post('/register', mediaUpload.single('profile_image'), registerUser)
 
-router.route('/login').post(validateUserLoginRequest, loginUser)
+router.route('/login').post(loginUser)
 
-router
-  .route('/profile')
-  .get(protect, getUserById)
-  .patch(validateUserUpdateRequest, protect, updateUserById)
+router.route('/profile').get(protect, getUserById)
+
+router.patch(
+  '/profile',
+  mediaUpload.single('profile_image'),
+  protect,
+  updateUserById
+)
 
 router.post('/tournaments/:tid/createArcanaTeam', createArcanaTeam)
 router.get('/:uid/my-tournaments/', getMyTournaments)

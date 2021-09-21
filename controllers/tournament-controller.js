@@ -123,6 +123,7 @@ export const getQualifiedTeams = asyncHandler(async (req, res) => {
 export const addPoints = asyncHandler(async (req, res) => {
   try {
     const { tournamentId, matchId, dayNum, matchNum, team1, team2 } = req.body
+    console.log(req.body)
     let currentPlayer
     let db = mongoose.connection
     //Getting the data from Dota OPENAPI
@@ -205,13 +206,19 @@ export const addPoints = asyncHandler(async (req, res) => {
       )
       //Getting the player Id
       currentPlayer = await Player.find({ alias: player.name })
-      console.log(currentPlayer[0]._id)
+      console.log(player.name)
+
+      let currentPlayerId = mongoose.Types.ObjectId(currentPlayer[0]._id)
+      console.log(tournamentId)
+      //console.log('Current Player ID: ' + currentPlayerId)
+      //console.log('Day Number: ' + dayNum)
+      //console.log(currentPlayer[0]._id)
       //Logic to update user document if they have the current player in the squad
-      db.collection('users').updateMany(
+      db.collection('users').updateOne(
         {
           'tournaments._id': mongoose.Types.ObjectId(tournamentId),
-          'tournaments.days.day': dayNum,
-          'tournaments.days.playingSquad': { $in: [currentPlayer[0]._id] },
+          'tournaments.days.day': parseInt(dayNum),
+          'tournaments.days.playingSquad': { $in: [currentPlayerId] },
         },
         {
           $inc: {
@@ -224,6 +231,7 @@ export const addPoints = asyncHandler(async (req, res) => {
     res.json('done')
   } catch (error) {
     console.log(error)
+    throw new Error(error)
   }
 })
 //Getting the Player Leaderboard
