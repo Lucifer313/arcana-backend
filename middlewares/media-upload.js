@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid'
 import path from 'path'
 
 const mediaUpload = multer({
-  limits: 500000,
+  limits: 10000000,
   storage: multer.diskStorage({
     destination: (req, file, cb) => {
       cb(null, 'uploads/images')
