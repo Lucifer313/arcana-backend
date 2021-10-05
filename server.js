@@ -22,6 +22,7 @@ dbConnect()
 
 const app = express()
 //Cors package from cross browser resource access//
+
 app.use(cors())
 
 //Parsing the request body to json
@@ -39,6 +40,7 @@ app.use(errorHandler)
 
 try {
   app.listen(process.env.PORT)
+  console.log(app.path())
   console.log(
     `SERVER RUNNING ON PORT ${process.env.PORT} IN ${process.env.ENVIRONMENT} MODE`
       .yellow.underline

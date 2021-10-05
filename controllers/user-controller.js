@@ -562,8 +562,8 @@ export const getSquadByDay = asyncHandler(async (req, res) => {
                   _id: {
                     $in: resSquad,
                   },
-                  //  'tournaments.id': mongoose.Types.ObjectId(tournamentId),
-                  //    'tournaments.points.dayNum': day,
+                  'tournaments.id': mongoose.Types.ObjectId(tournamentId),
+                  'tournaments.points.dayNum': day,
                 },
               },
               {

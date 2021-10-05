@@ -128,7 +128,7 @@ export const addPoints = asyncHandler(async (req, res) => {
     let db = mongoose.connection
     //Getting the data from Dota OPENAPI
     let matchDetails = await axios.get(
-      `https://api.opendota.com/api/matches/${matchId}`
+      `https://api.opendota.com/api/matches/6033763787`
     )
 
     //Extracting the player array
@@ -150,18 +150,49 @@ export const addPoints = asyncHandler(async (req, res) => {
       const win = player.win * 40
       //Purchase is a combination of wards, sod and dop
       const {
-        purchase: { ward_sentry, smoke_of_deceit, dust_of_appearance },
+        purchase: { ward_sentry, smoke_of_deceit, dust_of_appearance, gem },
       } = player
+
+      console.log(
+        'Kills: ' +
+          player.kills +
+          ' deaths: ' +
+          player.deaths +
+          ' gpm: ' +
+          player.gold_per_min +
+          ' xpm: ' +
+          player.xp_per_min +
+          ' last hits: ' +
+          player.last_hits +
+          ' first blood: ' +
+          player.firstblood_claimed +
+          ' camps: ' +
+          player.camps_stacked +
+          ' win: ' +
+          player.win +
+          ' sentry: ' +
+          ward_sentry +
+          ' smoke: ' +
+          smoke_of_deceit +
+          ' dust_of_appearance: ' +
+          dust_of_appearance +
+          ' Gem: ' +
+          gem
+      )
 
       //Calculating the support gold
       const ward_sentry_gold = ward_sentry === undefined ? 0 : ward_sentry * 50
+      const gem_gold = gem === undefined ? 0 : gem * 900
       const smoke_of_deceit_gold =
         smoke_of_deceit === undefined ? 0 : smoke_of_deceit * 50
       const dust_of_appearance_gold =
         dust_of_appearance === undefined ? 0 : dust_of_appearance * 80
       //Multiplying the support gold with its multiplier
       const support_gold =
-        (ward_sentry_gold + smoke_of_deceit_gold + dust_of_appearance_gold) *
+        (ward_sentry_gold +
+          smoke_of_deceit_gold +
+          dust_of_appearance_gold +
+          gem_gold) *
         0.005
       //console.log(support_gold)
       //Calculating the final points for the player
@@ -173,7 +204,7 @@ export const addPoints = asyncHandler(async (req, res) => {
         xpm +
         last_hits +
         first_blood +
-        heal +
+        //heal +
         camps_stacked +
         win +
         support_gold
@@ -206,15 +237,17 @@ export const addPoints = asyncHandler(async (req, res) => {
       )
       //Getting the player Id
       currentPlayer = await Player.find({ alias: player.name })
-      console.log(player.name)
+      console.log('Player Name: ' + player.name)
+      console.log('Player Points: ' + points)
 
       let currentPlayerId = mongoose.Types.ObjectId(currentPlayer[0]._id)
-      console.log(tournamentId)
+      console.log('Current Player ID: ' + currentPlayerId)
+
       //console.log('Current Player ID: ' + currentPlayerId)
       //console.log('Day Number: ' + dayNum)
       //console.log(currentPlayer[0]._id)
       //Logic to update user document if they have the current player in the squad
-      db.collection('users').updateOne(
+      db.collection('users').updateMany(
         {
           'tournaments._id': mongoose.Types.ObjectId(tournamentId),
           'tournaments.days.day': parseInt(dayNum),
@@ -387,7 +420,7 @@ export const getArcanaLeaderboard = asyncHandler(async (req, res) => {
         },
         {
           $sort: {
-            'tournaments.total_points': -1,
+            'tournaments.points': -1,
           },
         },
       ])
