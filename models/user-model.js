@@ -7,10 +7,8 @@ const userSchema = mongoose.Schema({
   active: { type: Boolean, required: true, default: false },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  date_of_birth: { type: String, required: true },
   alias: { type: String, required: true },
   role: { type: String, required: true, default: 'user' },
-  country: { type: String, required: true, default: 'India' },
   profile_image: { type: String, required: true },
   tournaments: [
     {

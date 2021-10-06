@@ -15,15 +15,7 @@ import Tournament from '../models/torunament-model.js'
 import Player from '../models/player-model.js'
 
 export const registerUser = asyncHandler(async (req, res) => {
-  const {
-    first_name,
-    last_name,
-    email,
-    password,
-    date_of_birth,
-    alias,
-    country,
-  } = req.body
+  const { first_name, last_name, email, password, alias } = req.body
 
   //Logic to check if email address alread
   const user = await User.findOne({ email })
@@ -39,9 +31,7 @@ export const registerUser = asyncHandler(async (req, res) => {
       last_name,
       email,
       password,
-      date_of_birth,
       alias,
-      country,
       profile_image: req.file.path,
     })
 
@@ -63,9 +53,7 @@ export const registerUser = asyncHandler(async (req, res) => {
         first_name: user.first_name,
         last_name: user.last_name,
         email: user.email,
-        date_of_birth: user.date_of_birth,
         alias: user.alias,
-        country: user.country,
         profile_image: user.profile_image,
         token: jwt_token,
       })
@@ -82,30 +70,29 @@ export const loginUser = asyncHandler(async (req, res) => {
   try {
     const user = await User.findOne({ email })
     console.log(user)
-    if (user.active === false) {
-      res.status(500)
-      throw new Error(
-        'Your account is inactive. Please activate your account by clicking on the verification link and then try again.'
-      )
-    }
 
     if (user && (await user.matchPassword(password))) {
-      res
-        .json({
-          _id: user._id,
-          first_name: user.first_name,
-          last_name: user.last_name,
-          email: user.email,
-          alias: user.alias,
-          role: user.role,
-          contact: user.contact,
-          date_of_birth: user.date_of_birth,
-          country: user.country,
-          profile_image: user.profile_image,
-          tournaments: user.tournaments,
-          token: generateToken(user._id, 'login'),
-        })
-        .status(200)
+      if (user.active === false) {
+        res.status(500)
+        throw new Error(
+          'Your account is inactive. Please activate your account by clicking on the verification link and then try again.'
+        )
+      } else {
+        res
+          .json({
+            _id: user._id,
+            first_name: user.first_name,
+            last_name: user.last_name,
+            email: user.email,
+            alias: user.alias,
+            role: user.role,
+            contact: user.contact,
+            profile_image: user.profile_image,
+            tournaments: user.tournaments,
+            token: generateToken(user._id, 'login'),
+          })
+          .status(200)
+      }
     } else {
       res.status(404)
       throw new Error('Invalid email or password')
@@ -202,8 +189,6 @@ export const getUserById = asyncHandler(async (req, res) => {
         alias: user.alias,
         role: user.role,
         contact: user.contact,
-        date_of_birth: user.date_of_birth,
-        country: user.country,
         profile_image: user.profile_image,
       })
       .status(200)
@@ -247,8 +232,6 @@ export const updateUserById = asyncHandler(async (req, res) => {
         email: user.email,
         alias: user.alias,
         role: user.role,
-        date_of_birth: user.date_of_birth,
-        country: user.country,
         profile_image: user.profile_image,
         tournaments: user.tournaments,
         token,
