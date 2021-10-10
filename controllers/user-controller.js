@@ -430,7 +430,9 @@ export const allowAddingSquad = asyncHandler(async (req, res) => {
 
       //Calculating the current time in Moment
       let currentMoment = Moment().format('MM-DD-YYYY, h:mm:ss a')
-      //console.log(currentMoment.hour())
+      let currentHour = Moment().hour()
+      console.log(currentHour)
+
       let ms = Moment(currentMoment, 'MM-DD-YYYY, h:mm:ss a').diff(
         Moment(lastSquadAddedAt, 'MM-DD-YYYY, h:mm:ss a').toISOString()
       )
@@ -438,7 +440,12 @@ export const allowAddingSquad = asyncHandler(async (req, res) => {
       const num_hours = d._data.hours
       const num_days = d._data.days
 
-      if (num_hours < 12 && num_days == 0) {
+      console.log(num_hours)
+
+      if (
+        (num_hours < 24 && num_days == 0) ||
+        (currentHour > 12 && currentHour < 23)
+      ) {
         allowed = false
       } else {
         allowed = true
