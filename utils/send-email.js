@@ -18,7 +18,7 @@ export const sendEmail = (recipient, message) => {
 
   let mailOptions = {
     from: 'Arcana League <verification@arcanaleague.com>',
-    to: 'bhavya.kothari19@gmail.com',
+    to: recipient,
     subject: 'Email verification for Arcana League',
     html: message,
   }

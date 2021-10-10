@@ -430,7 +430,7 @@ export const allowAddingSquad = asyncHandler(async (req, res) => {
 
       //Calculating the current time in Moment
       let currentMoment = Moment().format('MM-DD-YYYY, h:mm:ss a')
-
+      console.log(currentMoment.hour())
       let ms = Moment(currentMoment, 'MM-DD-YYYY, h:mm:ss a').diff(
         Moment(lastSquadAddedAt, 'MM-DD-YYYY, h:mm:ss a').toISOString()
       )
