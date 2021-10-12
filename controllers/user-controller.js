@@ -443,8 +443,8 @@ export const allowAddingSquad = asyncHandler(async (req, res) => {
       console.log(num_hours)
 
       if (
-        (num_hours < 24 && num_days == 0) ||
-        (currentHour > 12 && currentHour < 21)
+        (num_hours < 16 && num_days == 0) ||
+        (currentHour > 7 && currentHour < 18)
       ) {
         allowed = false
       } else {

@@ -128,7 +128,7 @@ export const addPoints = asyncHandler(async (req, res) => {
     let db = mongoose.connection
     //Getting the data from Dota OPENAPI
     let matchDetails = await axios.get(
-      `https://api.opendota.com/api/matches/6033763787`
+      `https://api.opendota.com/api/matches/${matchId}`
     )
 
     //Extracting the player array
