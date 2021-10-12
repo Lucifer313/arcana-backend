@@ -1,6 +1,7 @@
 import express from 'express'
 import {
   addPoints,
+  checkPlayerName,
   createTournament,
   deleteTournamentById,
   eliminateTeam,
@@ -24,5 +25,6 @@ router.get('/:tid/player-leaderboard', getPlayerLeaderboard)
 router.patch('/:tid/eliminate-team', eliminateTeam)
 router.patch('/:tid/undo-eliminate-team', undoEliminateTeam)
 router.get('/:tid/arcana-leaderboard', getArcanaLeaderboard)
+router.get('/check-players', checkPlayerName)
 
 export default router

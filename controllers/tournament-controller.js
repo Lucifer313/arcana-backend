@@ -204,7 +204,7 @@ export const addPoints = asyncHandler(async (req, res) => {
         xpm +
         last_hits +
         first_blood +
-        //heal +
+        heal +
         camps_stacked +
         win +
         support_gold
@@ -429,6 +429,34 @@ export const getArcanaLeaderboard = asyncHandler(async (req, res) => {
         console.log(docs)
         res.json(docs)
       })
+  } catch (error) {
+    throw new Error(error)
+  }
+})
+
+export const checkPlayerName = asyncHandler(async (req, res) => {
+  try {
+    const { matchId } = req.body
+
+    let currentPlayer
+    let db = mongoose.connection
+    //Getting the data from Dota OPENAPI
+    let matchDetails = await axios.get(
+      `https://api.opendota.com/api/matches/${matchId}`
+    )
+
+    //Extracting the player array
+    let {
+      data: { players },
+    } = matchDetails
+    //Looping through each player to calculate points and add it to their mongodb records
+    for (const player of players) {
+      console.log(player.name)
+      let playerName = await Player.find({ alias: player.name })
+      console.log(playerName)
+    }
+
+    res.json('done').status(200)
   } catch (error) {
     throw new Error(error)
   }
